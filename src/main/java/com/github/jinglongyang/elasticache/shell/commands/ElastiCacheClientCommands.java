@@ -5,7 +5,6 @@ import com.github.jinglongyang.elasticache.shell.elasticache.ElastiCacheClient;
 import com.github.jinglongyang.elasticache.shell.elasticache.ElastiCacheClientBuilder;
 import com.github.jinglongyang.elasticache.shell.elasticache.LibKetamaHash;
 import com.github.jinglongyang.elasticache.shell.elasticache.LibKetamaNodeLocatorMethod;
-import com.github.jinglongyang.elasticache.shell.util.EnumUtils;
 import net.spy.memcached.DefaultHashAlgorithm;
 import net.spy.memcached.HashAlgorithm;
 import net.spy.memcached.MemcachedClient;
@@ -18,7 +17,10 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Properties;
 
 /**
  * @author jinglongyang
@@ -33,15 +35,38 @@ public class ElastiCacheClientCommands implements CommandMarker {
         return elastiCacheClient == null ? true : false;
     }
 
-    @CliAvailabilityIndicator({"get", "delete", "disconnect", "list", "incr"})
+    @CliAvailabilityIndicator({"set", "get", "delete", "disconnect", "list", "incr"})
     public boolean isElastiCacheCommandAvailable() {
         return elastiCacheClient == null ? false : true;
     }
 
     @CliCommand(value = "connect", help = "Connect ElastiCache")
-    public String connect(@CliOption(key = {"host", "h", ""}, mandatory = true, help = "ElastiCache server host") final String host,
+    public String connect(@CliOption(key = {"host", "h"}, mandatory = false, help = "ElastiCache server host") String host,
+                          @CliOption(key = {"env", "e"}, mandatory = false, help = "ElastiCache server short name in config") final String env,
                           @CliOption(key = {"timeout", "t"}, mandatory = false, help = "", unspecifiedDefaultValue = "10000") final long timeout,
                           @CliOption(key = {"algorithm", "a"}, mandatory = false, help = "") final String algorithm) {
+
+        if (StringUtils.isBlank(host) && StringUtils.isBlank(env)) {
+            return "";
+        }
+        if (StringUtils.isBlank(host)) {
+            String path = new File(".").getAbsoluteFile().getParent();
+            File file = new File(String.format("%s%selasticache-cli-config.properties", path, File.separator));
+            if (!file.exists()) {
+                return "There is no env config";
+            }
+            Properties properties = new Properties();
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                properties.load(fileInputStream);
+            } catch (IOException e) {
+                return ExceptionUtils.getMessage(e);
+            }
+            if (!properties.containsKey(env)) {
+                return String.format("The config [%s] does not exist", env);
+            }
+            host = properties.getProperty(env);
+        }
+
         ElastiCacheClientBuilder elastiCacheClientBuilder = new ElastiCacheClientBuilder()
                 .withAddress(host)
                 .withOperationTimeout(timeout);
@@ -136,81 +161,5 @@ public class ElastiCacheClientCommands implements CommandMarker {
         Object tmp = valueReadType.parse(value);
         boolean success = elastiCacheClient.setValue(key, tmp, expireTime);
         return success ? "Set successfully" : "Set failed";
-    }
-
-    public enum ReadType {
-        String("string"), JSON("json"), Primitive("primitive");
-
-        private String value;
-
-        private ReadType(String value) {
-            this.value = value;
-        }
-
-        public static ReadType fromValue(String value) {
-            if (value == null) {
-                return ReadType.String;
-            }
-            return EnumUtils.getEnumFromString(ReadType.class, value);
-        }
-
-        @Override
-        public String toString() {
-            return value;
-        }
-    }
-
-    public enum WriteType {
-        String("string") {
-            @Override
-            public Object parse(String value) {
-                return value;
-            }
-        }, Long("long") {
-            @Override
-            public Object parse(String value) {
-                return java.lang.Long.valueOf(value);
-            }
-        }, Integer("int") {
-            @Override
-            public Object parse(String value) {
-                return java.lang.Integer.valueOf(value);
-            }
-        }, Float("float") {
-            @Override
-            public Object parse(String value) {
-                return java.lang.Float.valueOf(value);
-            }
-        }, Double("double") {
-            @Override
-            public Object parse(String value) {
-                return java.lang.Double.valueOf(value);
-            }
-        }, Boolean("boolean") {
-            @Override
-            public Object parse(String value) {
-                return java.lang.Boolean.valueOf(value);
-            }
-        };
-
-        private String value;
-
-        private WriteType(String value) {
-            this.value = value;
-        }
-
-        public static WriteType fromValue(String value) {
-            if (value == null) {
-                return WriteType.String;
-            }
-            return EnumUtils.getEnumFromString(WriteType.class, value);
-        }
-
-        @Override
-        public String toString() {
-            return value;
-        }
-
-        abstract public Object parse(String value);
     }
 }
