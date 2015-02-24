@@ -1,0 +1,12 @@
+target
+build
+bin
+*.iml
+*.ipr
+*.iws
+rest.txt
+*.log
+atlassian-ide-plugin.xml
+*.hprof
+*.hprof.index
+.idea
