@@ -22,7 +22,7 @@ import java.io.IOException;
 /**
  * Driver class to run the ElastiCache command client.
  *
- * @author Aaron Yang
+ * @author jinglongyang
  */
 public class Main {
 

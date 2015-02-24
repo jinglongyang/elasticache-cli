@@ -30,12 +30,12 @@ public class ElastiCacheClientCommandTests {
 
         JLineShellComponent shell = bootstrap.getJLineShellComponent();
 
-        CommandResult cr = shell.executeCommand("connect --h rpcloud-cache-dev.zdkdqj.cfg.usw2.cache.amazonaws.com:11211 --t 10000");
+        CommandResult cr = shell.executeCommand("connect --h localhost:11211");
         assertEquals(true, cr.isSuccess());
         assertEquals("Connected successfully", cr.getResult());
 
-        cr = shell.executeCommand("get user_ec150b201dac11e4bf09023f459f93a7");
+        cr = shell.executeCommand("get key");
         assertEquals(true, cr.isSuccess());
-        assertEquals("Key does not exist on rpcloud-cache-dev.zdkdqj.0002.usw2.cache.amazonaws.com", cr.getResult());
+        assertEquals("Key does not exist", cr.getResult());
     }
 }
