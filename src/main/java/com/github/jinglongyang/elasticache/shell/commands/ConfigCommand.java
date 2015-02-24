@@ -5,6 +5,7 @@ import org.springframework.shell.core.CommandMarker;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,11 +18,13 @@ import java.util.Set;
 /**
  * Created by jinglongyang on 2/24/15.
  */
+@Component
 public class ConfigCommand implements CommandMarker {
     @CliAvailabilityIndicator({"config", "env"})
     public boolean isAvailable() {
         return true;
     }
+
     @CliCommand(value = "config", help = "Config shortcut for ElastiCache server")
     public String config(@CliOption(key = {"name", "n", ""}, mandatory = true, help = "The short name of ElastiCache host") final String name,
                          @CliOption(key = {"host", "h"}, mandatory = true, help = "The host of ElastiCache") final String host) {
