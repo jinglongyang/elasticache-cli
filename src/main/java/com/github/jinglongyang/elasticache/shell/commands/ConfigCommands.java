@@ -19,7 +19,7 @@ import java.util.Set;
  * Created by jinglongyang on 2/24/15.
  */
 @Component
-public class ConfigCommand implements CommandMarker {
+public class ConfigCommands implements CommandMarker {
     @CliAvailabilityIndicator({"config", "env"})
     public boolean isAvailable() {
         return true;
