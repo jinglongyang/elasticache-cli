@@ -1,11 +1,11 @@
 package com.github.jinglongyang.elasticache.shell.commands;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jinglongyang.elasticache.shell.elasticache.ElastiCacheClient;
 import com.github.jinglongyang.elasticache.shell.elasticache.ElastiCacheClientBuilder;
 import com.github.jinglongyang.elasticache.shell.elasticache.LibKetamaHash;
 import com.github.jinglongyang.elasticache.shell.elasticache.LibKetamaNodeLocatorMethod;
+import com.github.jinglongyang.elasticache.shell.util.EnumUtils;
 import net.spy.memcached.DefaultHashAlgorithm;
 import net.spy.memcached.HashAlgorithm;
 import net.spy.memcached.MemcachedClient;
@@ -33,13 +33,13 @@ public class ElastiCacheClientCommands implements CommandMarker {
         return elastiCacheClient == null ? true : false;
     }
 
-    @CliAvailabilityIndicator({"get", "delete", "disconnect", "list"})
+    @CliAvailabilityIndicator({"get", "delete", "disconnect", "list", "incr"})
     public boolean isElastiCacheCommandAvailable() {
         return elastiCacheClient == null ? false : true;
     }
 
     @CliCommand(value = "connect", help = "Connect ElastiCache")
-    public String connect(@CliOption(key = {"host", "h"}, mandatory = true, help = "ElastiCache server host") final String host,
+    public String connect(@CliOption(key = {"host", "h", ""}, mandatory = true, help = "ElastiCache server host") final String host,
                           @CliOption(key = {"timeout", "t"}, mandatory = false, help = "", unspecifiedDefaultValue = "10000") final long timeout,
                           @CliOption(key = {"algorithm", "a"}, mandatory = false, help = "") final String algorithm) {
         ElastiCacheClientBuilder elastiCacheClientBuilder = new ElastiCacheClientBuilder()
@@ -73,16 +73,13 @@ public class ElastiCacheClientCommands implements CommandMarker {
     }
 
     @CliCommand(value = "get", help = "Get key from ElastiCache")
-    public String get(@CliOption(key = {"", "key"}, mandatory = true, help = "The key of getting from ElastiCache") final String key,
+    public String get(@CliOption(key = {"", "key", "k"}, mandatory = true, help = "The key of getting from ElastiCache") final String key,
                       @CliOption(key = {"type"}, mandatory = false, help = "The type of value.(string, json, primitive)", unspecifiedDefaultValue = "string") final String type) {
-        Type valueType = Type.fromValue(type);
-        if (valueType == null) {
+        ReadType valueReadType = ReadType.fromValue(type);
+        if (valueReadType == null) {
             return "Type can only be string, json, primitive";
         }
-        if (Type.String == valueType) {
-            return elastiCacheClient.getStringValue(key);
-        }
-        if (Type.Primitive == valueType) {
+        if (ReadType.String == valueReadType || ReadType.Primitive == valueReadType) {
             return String.valueOf(elastiCacheClient.get(key));
         }
         String value = elastiCacheClient.getStringValue(key);
@@ -99,20 +96,26 @@ public class ElastiCacheClientCommands implements CommandMarker {
         }
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             return value;
         }
     }
 
     @CliCommand(value = "delete", help = "Delete a key from ElastiCache")
-    public String delete(@CliOption(key = {"", "key"}, mandatory = true, help = "The key of deletion from ElastiCache") final String key) {
+    public String delete(@CliOption(key = {"", "key", "k"}, mandatory = true, help = "The key of deletion from ElastiCache") final String key) {
         boolean success = elastiCacheClient.delete(key);
         return success ? "Delete successfully" : "Delete failed";
     }
 
+    @CliCommand(value = "incr", help = "Increase a key from ElastiCache")
+    public String incr(@CliOption(key = {"", "key", "k"}, mandatory = true, help = "The key of increased from ElastiCache") final String key,
+                       @CliOption(key = {"value", "v"}, mandatory = true, help = "") final int value) {
+        return String.valueOf(elastiCacheClient.incr(key, value));
+    }
+
     @CliCommand(value = "list", help = "List ElastiCache Servers")
     public String list() {
-        return elastiCacheClient.getAllNodeEndPoints();
+        return elastiCacheClient.getServerNodes();
     }
 
     @CliCommand(value = "disconnect", help = "Disconnect ElastiCache after connect")
@@ -121,60 +124,93 @@ public class ElastiCacheClientCommands implements CommandMarker {
         return ExitShellRequest.NORMAL_EXIT;
     }
 
-    //    @CliCommand(value = "set", help = "Set key value to ElastiCache")
-    public String set(@CliOption(key = {"type"}, mandatory = true, help = "") final String type,
-                      @CliOption(key = {"expire"}, mandatory = true, help = "") final int expireTime,
-                      @CliOption(key = {"key"}, mandatory = true, help = "") final String key,
-                      @CliOption(key = {"value"}, mandatory = true, help = "") final String value) {
-        Type valueType = Type.fromValue(type);
-        if (valueType == null) {
-            return "";
+    @CliCommand(value = "set", help = "Set key value pairs to ElastiCache")
+    public String set(@CliOption(key = {"key", "k"}, mandatory = true, help = "The key will be used when save to ElastiCache") final String key,
+                      @CliOption(key = {"value", "v"}, mandatory = true, help = "The value will be saved to ElastiCache") final String value,
+                      @CliOption(key = {"type", "t"}, mandatory = false, help = "The type of the value(string, long, int, float, double, boolean)") final String type,
+                      @CliOption(key = {"expire", "e"}, mandatory = true, help = "Expire time of the key") final int expireTime) {
+        WriteType valueReadType = WriteType.fromValue(type);
+        if (valueReadType == null) {
+            return "Type can only be string, long, int, float, double, boolean";
         }
-        boolean success;
-        if (Type.String == valueType) {
-            success = elastiCacheClient.setStringValue(key, value, expireTime);
-        } else {
-            long tmp;
-            try {
-                tmp = Long.parseLong(value);
-            } catch (NumberFormatException e) {
-                return "The value must be long";
-            }
-            success = elastiCacheClient.setLongValue(key, tmp, expireTime);
-        }
+        Object tmp = valueReadType.parse(value);
+        boolean success = elastiCacheClient.setValue(key, tmp, expireTime);
         return success ? "Set successfully" : "Set failed";
     }
 
-
-    public enum Type {
+    public enum ReadType {
         String("string"), JSON("json"), Primitive("primitive");
 
         private String value;
 
-        private Type(String value) {
+        private ReadType(String value) {
             this.value = value;
         }
 
-        public static Type fromValue(String value) {
+        public static ReadType fromValue(String value) {
             if (value == null) {
-                return Type.String;
+                return ReadType.String;
             }
-            String tmp = value.trim().toLowerCase();
-            if (Type.String.value.equals(tmp)) {
-                return Type.String;
-            }
-            if (Type.JSON.value.equals(tmp)) {
-                return Type.JSON;
-            }
-            if (Type.Primitive.value.equals(tmp)) {
-                return Type.Primitive;
-            }
-            return null;
+            return EnumUtils.getEnumFromString(ReadType.class, value);
         }
 
         @Override
         public String toString() {
             return value;
         }
+    }
+
+    public enum WriteType {
+        String("string") {
+            @Override
+            public Object parse(String value) {
+                return value;
+            }
+        }, Long("long") {
+            @Override
+            public Object parse(String value) {
+                return java.lang.Long.valueOf(value);
+            }
+        }, Integer("int") {
+            @Override
+            public Object parse(String value) {
+                return java.lang.Integer.valueOf(value);
+            }
+        }, Float("float") {
+            @Override
+            public Object parse(String value) {
+                return java.lang.Float.valueOf(value);
+            }
+        }, Double("double") {
+            @Override
+            public Object parse(String value) {
+                return java.lang.Double.valueOf(value);
+            }
+        }, Boolean("boolean") {
+            @Override
+            public Object parse(String value) {
+                return java.lang.Boolean.valueOf(value);
+            }
+        };
+
+        private String value;
+
+        private WriteType(String value) {
+            this.value = value;
+        }
+
+        public static WriteType fromValue(String value) {
+            if (value == null) {
+                return WriteType.String;
+            }
+            return EnumUtils.getEnumFromString(WriteType.class, value);
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+
+        abstract public Object parse(String value);
     }
 }

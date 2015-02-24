@@ -4,6 +4,10 @@ import net.spy.memcached.DefaultHashAlgorithm;
 import net.spy.memcached.HashAlgorithm;
 
 /**
+ * When using java spymemached client communicate with nodejs memcache client via memcache server, there is some issues
+ * in nodejs library, the <a href="https://github.com/3rd-Eden/node-memcached">node-memcached</a> has incompatibility lib ketama
+ * has implementation, so implement a new hash class same with node-memcached
+ *
  * @author: jinglongyang
  */
 public class LibKetamaHash implements HashAlgorithm {

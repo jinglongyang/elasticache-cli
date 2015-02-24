@@ -36,7 +36,7 @@ public class JacksonTranscoder<T> implements Transcoder<T> {
         try {
             return new CachedData(JSON_SERIALIZED, mapper.writeValueAsBytes(o), getMaxSize());
         } catch (IOException e) {
-            LOGGER.warn(String.format("Error serializing object %s", o.toString()), e);
+            LOGGER.warn(String.format("Error serializing object [%s]", o.toString()), e);
             throw new RuntimeException(e);
         }
     }
@@ -44,13 +44,13 @@ public class JacksonTranscoder<T> implements Transcoder<T> {
     @Override
     public T decode(final CachedData data) {
         if ((data.getFlags() & JSON_SERIALIZED) == 0) {
-            LOGGER.warn("Cannot decode cached data {} using json transcoder", data);
+            LOGGER.warn("Cannot decode cached data [{}] using json transcoder", data);
             throw new RuntimeException("Cannot decode cached data using json transcoder");
         }
         try {
             return mapper.readValue(data.getData(), clazz);
         } catch (IOException e) {
-            LOGGER.warn(String.format("Error deserializing cached data %s", data.toString()), e);
+            LOGGER.warn(String.format("Error deserializing cached data [%s]", data.toString()), e);
             return null;
         }
     }
