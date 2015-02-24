@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Default Logback for development work and teamcity builds.-->
 <configuration>
-    <contextName>messaging</contextName>
-    <jmxConfigurator/>
-
-    <property name="CONSOLE_LOG_PATTERN"
-              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5p){magenta} %clr([%-30.-30t{14}]){faint} %clr(%-25.45logger{0}){cyan} %clr(:){faint} %m%n%wex"/>
-    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
-    <conversionRule conversionWord="wex"
-                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
-
+    <contextName>elasticache-cli</contextName>
+    
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <pattern>%date %level [%thread] [%file:%line] - %msg%n</pattern>
         </encoder>
     </appender>
 
