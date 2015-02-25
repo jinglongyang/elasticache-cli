@@ -30,11 +30,11 @@ public class ElastiCacheCommandBannerProvider extends DefaultBannerProvider {
 
     public String getBanner() {
         StringBuffer buf = new StringBuffer();
-        buf.append("=====================================================================" + OsUtils.LINE_SEPARATOR);
-        buf.append("*                                                                    *" + OsUtils.LINE_SEPARATOR);
-        buf.append("*               ElastiCache Command Client                           *" + OsUtils.LINE_SEPARATOR);
-        buf.append("*                                                                    *" + OsUtils.LINE_SEPARATOR);
-        buf.append("=====================================================================" + OsUtils.LINE_SEPARATOR);
+        buf.append("===============================================================================" + OsUtils.LINE_SEPARATOR);
+        buf.append("*                                                                              *" + OsUtils.LINE_SEPARATOR);
+        buf.append("*                    ElastiCache Command Line Client                           *" + OsUtils.LINE_SEPARATOR);
+        buf.append("*                                                                              *" + OsUtils.LINE_SEPARATOR);
+        buf.append("================================================================================" + OsUtils.LINE_SEPARATOR);
         buf.append("Version:" + this.getVersion());
         return buf.toString();
     }
