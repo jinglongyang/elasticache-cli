@@ -29,6 +29,6 @@ Sample commands:
 7.Delete key from ElastiCache server
     $>delete key
 
-8.Exist the shell
+8.Exit the shell
     $>exit
     $>quit
