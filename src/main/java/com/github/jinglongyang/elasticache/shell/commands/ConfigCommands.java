@@ -26,7 +26,7 @@ public class ConfigCommands implements CommandMarker {
     }
 
     @CliCommand(value = "config", help = "Config shortcut for ElastiCache server")
-    public String config(@CliOption(key = {"name", "n", ""}, mandatory = true, help = "The short name of ElastiCache host") final String name,
+    public String config(@CliOption(key = {"name", "n"}, mandatory = true, help = "The short name of ElastiCache host") final String name,
                          @CliOption(key = {"host", "h"}, mandatory = true, help = "The host of ElastiCache") final String host) {
         String path = new File(".").getAbsoluteFile().getParent();
         File file = new File(String.format("%s%selasticache-cli-config.properties", path, File.separator));
