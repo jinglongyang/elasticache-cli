@@ -2,12 +2,16 @@
 <!-- Default Logback for development work and teamcity builds.-->
 <configuration>
     <contextName>elasticache-cli</contextName>
-    
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%date %level [%thread] [%file:%line] - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <logger name="net.spy.memcached" level="ERROR">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
 
     <root level="WARN">
         <appender-ref ref="CONSOLE"/>

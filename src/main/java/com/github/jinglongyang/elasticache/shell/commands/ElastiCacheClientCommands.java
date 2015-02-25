@@ -47,7 +47,7 @@ public class ElastiCacheClientCommands implements CommandMarker {
                           @CliOption(key = {"algorithm", "a"}, mandatory = false, help = "") final String algorithm) {
 
         if (StringUtils.isBlank(host) && StringUtils.isBlank(env)) {
-            return "";
+            return "Host or env must have one.";
         }
         if (StringUtils.isBlank(host)) {
             String path = new File(".").getAbsoluteFile().getParent();
@@ -104,7 +104,10 @@ public class ElastiCacheClientCommands implements CommandMarker {
         if (valueReadType == null) {
             return "Type can only be string, json, primitive";
         }
-        if (ReadType.String == valueReadType || ReadType.Primitive == valueReadType) {
+        if (ReadType.String == valueReadType) {
+            return elastiCacheClient.getStringValue(key);
+        }
+        if (ReadType.Primitive == valueReadType) {
             return String.valueOf(elastiCacheClient.get(key));
         }
         String value = elastiCacheClient.getStringValue(key);
