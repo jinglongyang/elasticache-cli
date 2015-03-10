@@ -11,7 +11,6 @@ import net.spy.memcached.MemcachedClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.shell.core.CommandMarker;
-import org.springframework.shell.core.ExitShellRequest;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
@@ -70,9 +69,9 @@ public class ElastiCacheClientCommands implements CommandMarker {
         ElastiCacheClientBuilder elastiCacheClientBuilder = new ElastiCacheClientBuilder()
                 .withAddress(host)
                 .withOperationTimeout(timeout);
+        HashAlgorithm hashAlgorithm = null;
         if (StringUtils.isNotBlank(algorithm)) {
             String tmp = algorithm.trim().toUpperCase();
-            HashAlgorithm hashAlgorithm;
             if (ElastiCacheClientBuilder.LIB_KETAMA_HASH.equals(tmp)) {
                 hashAlgorithm = new LibKetamaHash(LibKetamaNodeLocatorMethod.hostname);
             } else {
@@ -82,10 +81,11 @@ public class ElastiCacheClientCommands implements CommandMarker {
                     return "Hash algorithm only can be one of NATIVE_HASH, CRC_HASH, FNV1_64_HASH, FNV1A_64_HASH, FNV1_32_HASH, FNV1A_32_HASH, KETAMA_HASH, LIB_KETAMA_HASH";
                 }
             }
-            if (hashAlgorithm != null) {
-                elastiCacheClientBuilder.withHashAlgorithm(hashAlgorithm);
-            }
         }
+        if (hashAlgorithm == null) {
+            hashAlgorithm = new LibKetamaHash(LibKetamaNodeLocatorMethod.hostname);
+        }
+        elastiCacheClientBuilder.withHashAlgorithm(hashAlgorithm);
         try {
             MemcachedClient memcachedClient = elastiCacheClientBuilder.build();
             elastiCacheClient = new ElastiCacheClient(memcachedClient, timeout);
@@ -99,7 +99,7 @@ public class ElastiCacheClientCommands implements CommandMarker {
 
     @CliCommand(value = "get", help = "Get key from ElastiCache")
     public String get(@CliOption(key = {"", "key", "k"}, mandatory = true, help = "The key of getting from ElastiCache") final String key,
-                      @CliOption(key = {"type"}, mandatory = false, help = "The type of value.(string, json, primitive)", unspecifiedDefaultValue = "string") final String type) {
+                      @CliOption(key = {"type", "t"}, mandatory = false, help = "The type of value.(string, json, primitive)", unspecifiedDefaultValue = "string") final String type) {
         ReadType valueReadType = ReadType.fromValue(type);
         if (valueReadType == null) {
             return "Type can only be string, json, primitive";
@@ -147,9 +147,10 @@ public class ElastiCacheClientCommands implements CommandMarker {
     }
 
     @CliCommand(value = "disconnect", help = "Disconnect ElastiCache after connect")
-    public ExitShellRequest disconnect() {
+    public String disconnect() {
         elastiCacheClient.shutdown();
-        return ExitShellRequest.NORMAL_EXIT;
+        elastiCacheClient = null;
+        return "Disconnected";
     }
 
     @CliCommand(value = "set", help = "Set key value pairs to ElastiCache")

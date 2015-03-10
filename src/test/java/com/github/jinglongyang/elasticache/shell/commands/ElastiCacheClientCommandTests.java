@@ -30,11 +30,11 @@ public class ElastiCacheClientCommandTests {
 
         JLineShellComponent shell = bootstrap.getJLineShellComponent();
 
-        CommandResult cr = shell.executeCommand("connect --h localhost:11211");
+        CommandResult cr = shell.executeCommand("connect --h rpcloud-cache-prod.epxzmn.cfg.usw2.cache.amazonaws.com:11211");
         assertEquals(true, cr.isSuccess());
         assertEquals("Connected successfully", cr.getResult());
 
-        cr = shell.executeCommand("get key");
+        cr = shell.executeCommand("get facebook_app_access_token_4_login");
         assertEquals(true, cr.isSuccess());
         assertEquals("Key does not exist", cr.getResult());
     }
